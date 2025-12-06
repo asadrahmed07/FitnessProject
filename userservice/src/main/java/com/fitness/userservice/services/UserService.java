@@ -5,10 +5,12 @@ import com.fitness.userservice.dto.UserResponse;
 import com.fitness.userservice.models.User;
 import com.fitness.userservice.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository repository;
@@ -16,12 +18,23 @@ public class UserService {
     public UserResponse register(RegisterRequest request) {
 
         if(repository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email Already Exists!");
+            User existingUser = repository.findByEmail(request.getEmail());
+            UserResponse response = new UserResponse();
+            response.setId(existingUser.getId());
+            response.setEmail(existingUser.getEmail());
+            response.setFirstName(existingUser.getFirstName());
+            response.setLastName(existingUser.getLastName());
+            response.setPassword(existingUser.getPassword());
+            response.setCreatedAt(existingUser.getCreatedAt());
+            response.setUpdatedAt(existingUser.getUpdatedAt());
+
+            return response;
         }
 
         User user = new User();
         user.setEmail(request.getEmail());
         user.setFirstName(request.getFirstName());
+        user.setKeycloakId(request.getKeycloakId());
         user.setLastName(request.getLastName());
         user.setPassword(request.getPassword());
 
@@ -29,6 +42,7 @@ public class UserService {
         UserResponse response = new UserResponse();
         response.setId(savedUser.getId());
         response.setEmail(savedUser.getEmail());
+        response.setKeycloakId(savedUser.getKeycloakId());
         response.setFirstName(savedUser.getFirstName());
         response.setLastName(savedUser.getLastName());
         response.setPassword(savedUser.getPassword());
@@ -54,7 +68,8 @@ public class UserService {
         return response;
     }
 
-    public boolean existByUserId(String userId) {
-        return repository.existsById(userId);
+    public boolean existByUserId(String keycloakId) {
+        log.info("KeyCloak Id received : {}", keycloakId);
+        return repository.existsByKeycloakId(keycloakId);
     }
 }
